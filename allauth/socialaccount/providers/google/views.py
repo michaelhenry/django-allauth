@@ -27,5 +27,21 @@ class GoogleOAuth2Adapter(OAuth2Adapter):
         return login
 
 
+class GoogleOAuth2RestAdapter(OAuth2Adapter):
+    provider_id = GoogleProvider.id
+    token_url = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
+
+    def complete_login(self, request, app, token, **kwargs):
+        resp = requests.get(self.token_url,
+                            params={'id_token': token.token,
+                                    'alt': 'json'})
+        resp.raise_for_status()
+        extra_data = resp.json()
+        login = self.get_provider() \
+            .sociallogin_from_response(request,
+                                       extra_data)
+        return login
+
+
 oauth2_login = OAuth2LoginView.adapter_view(GoogleOAuth2Adapter)
 oauth2_callback = OAuth2CallbackView.adapter_view(GoogleOAuth2Adapter)
